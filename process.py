@@ -1,9 +1,7 @@
 import datetime
 import json
 import math
-import os
 import random
-import re
 import time
 import config
 from encrypt import Encrypt
@@ -49,7 +47,7 @@ mt_version = json.loads(requests.get('https://itunes.apple.com/cn/lookup?id=1600
 
 header_context = f'''
 MT-Lat: 28.499562
-MT-K: 1675213490331
+MT-K: f'{int(time.time() * 1000)}'
 MT-Lng: 102.182324
 Host: app.moutai519.com.cn
 MT-User-Tag: 0
@@ -58,12 +56,12 @@ MT-Network-Type: WIFI
 MT-Token: 1
 MT-Team-ID: 
 MT-Info: 028e7f96f6369cafe1d105579c5b9377
-MT-Device-ID: 2F2075D0-B66C-4287-A903-DBFF6358342A
+MT-Device-ID: C3EDD3A8-EB9A-4951-A203-BFD2112247A1
 MT-Bundle-ID: com.moutai.mall
 Accept-Language: en-CN;q=1, zh-Hans-CN;q=0.9
 MT-Request-ID: 167560018873318465
 MT-APP-Version: 1.3.7
-User-Agent: iOS;16.3;Apple;?unrecognized?
+User-Agent: Mozilla/5.0 (iPhone; CPU iPhone OS 17_4_1 like Mac OS X)
 MT-R: clips_OlU6TmFRag5rCXwbNAQ/Tz1SKlN8THcecBp/HGhHdw==
 Content-Length: 93
 Accept-Encoding: gzip, deflate, br
@@ -256,7 +254,7 @@ def send_msg(title, content):
         send_dingtalk_msg(title, content)
     else:
         logging.error(f'没有可用的通知key，请检查环境变量配置！！')
-        logging.info(f'MT_PUSHPLUS_KEY={config.MT_PUSHPLUS_KEY},MT_DINGTALK_ACCESS_TOKEN={config.MT_DINGTALK_ACCESS_TOKEN},MT_DINGTALK_SECRET={MT_DINGTALK_SECRET}')
+        logging.info(f'MT_PUSHPLUS_KEY={config.MT_PUSHPLUS_KEY},MT_DINGTALK_ACCESS_TOKEN={config.MT_DINGTALK_ACCESS_TOKEN},MT_DINGTALK_SECRET={config.MT_DINGTALK_SECRET}')
 
 # push 消息发送
 def send_push_msg(title, content):
@@ -302,18 +300,18 @@ def send_dingtalk_msg(title, content):
 # 核心代码，执行预约
 def reservation(params: dict, mobile: str):
     r_success = False
-    msg = f"{mobile}】预约结果查询..."
+    msg = f"{mobile}】预约中..."
     try:
         params.pop('userId')
         logging.info(f'reservation start ...\n params({params}), mobile({mobile})')
         responses = requests.post("https://app.moutai519.com.cn/xhr/front/mall/reservation/add", json=params,
                                   headers=headers)
-        ret_msg = responses.json()["message"]
+        ret_msg = responses.text
         # if responses.status_code == 401:
         #     send_msg('！！失败！！茅台预约', f'[{mobile}],登录token失效，需要重新登录')
         #     raise RuntimeError
 
-        msg = f'【{mobile}】预约结果：code({responses.status_code}),msg({ret_msg}) '
+        msg = f'【{mobile}】预约结果: msg({ret_msg}) '
         logging.info(f'预约结果返回：{responses.json()}')
 
         # 如果是成功，推送消息简化；失败消息则全量推送
@@ -349,11 +347,14 @@ def get_map(lat: str = '28.499562', lng: str = '102.182324'):
         'Origin': 'https://h5.moutai519.com.cn',
         'MT-APP-Version': mt_version,
         'MT-Request-ID': f'{int(time.time() * 1000)}{random.randint(1111111, 999999999)}{int(time.time() * 1000)}',
-        'Accept-Language': 'zh-CN,zh-Hans;q=1',
-        'MT-Device-ID': f'{int(time.time() * 1000)}{random.randint(1111111, 999999999)}{int(time.time() * 1000)}',
+        'Accept-Language': 'zh-Hans-CN;q=1, ko-CN;q=0.9, en-CN;q=0.8',
+        'MT-Device-ID': 'C3EDD3A8-EB9A-4951-A203-BFD2112247A1',
         'Accept': 'application/json, text/javascript, */*; q=0.01',
+        'MT-Bundle-ID': 'com.moutai.mall',
+        'MT-Network-Type': 'WIFI',
         'mt-lng': f'{lng}',
-        'mt-lat': f'{lat}'
+        'mt-lat': f'{lat}',
+        'MT-K': f'{int(time.time() * 1000)}'
     }
     res = requests.get(url, headers=headers, )
     mtshops = res.json().get('data', {}).get('mtshops_pc', {})
