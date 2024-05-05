@@ -317,6 +317,7 @@ def reservation(params: dict, mobile: str):
         # 如果是成功，推送消息简化；失败消息则全量推送
         if responses.status_code == 200:
             r_success = True
+            msg = f'【{mobile}】预约成功！'
         else:
             r_success = False
     except BaseException as e:
